@@ -1,0 +1,6 @@
+
+/.vs
+*.dat
+*.bin
+/x64
+/Project1/x64/Debug
