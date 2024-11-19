@@ -46,9 +46,9 @@ Student::Student(char* name, short kol1, short kol2, short kol3)
 
 bool Student::isValid()
 {
-	return (kol1 >= 1 && kol1 <= 5) &&
-		(kol2 >= 1 && kol2 <= 5) &&
-		(kol3 >= 1 && kol3 <= 5) &&
+	return (kol1 >= 1 && kol1 <= 6) &&
+		(kol2 >= 1 && kol2 <= 6) &&
+		(kol3 >= 1 && kol3 <= 6) &&
 		(strcmp(name, "\0") != 0);
 }
 

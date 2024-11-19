@@ -17,7 +17,6 @@ public:
 		return *this;
 	}
 
-
 	T readSingle()
 	{
 		T output;
@@ -31,13 +30,6 @@ public:
 		file.read(reinterpret_cast<char*>(output), sizeof(T) * number);
 		return output;
 	}
-
-	/*T* smartRead()
-	{
-		int runLength;
-		file.read(reinterpret_cast<char*>(&runLength), sizeof(int));
-		return readMultiple(runLength);
-	}*/
 
 	int readLength()
 	{
@@ -59,6 +51,11 @@ public:
 	void writeLength(int length)
 	{
 		file.write(reinterpret_cast<char*>(&length), sizeof(int));
+	}
+
+	bool isEndOfTape()
+	{
+		return file.eof() && file.fail();
 	}
 
 	Tape() {	}

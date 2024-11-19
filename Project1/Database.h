@@ -2,6 +2,7 @@
 #include <string>
 
 #include "Tape.h"
+#include "Entity.h"
 
 template <class T> class Database
 {
@@ -25,14 +26,33 @@ private:
 		isSorted = true;
 		db.openToRead();
 		tape3.openToWrite();
-		runLengthTape.openToWrite();
+
+
+		//Tape<int> ffffff("runLengthTape.dat");
+		/*runLengthTape.openToWrite();
+		runLengthTape.writeSingle(5);
+		runLengthTape.close();
+		runLengthTape.openToRead();
+		int aaaa = runLengthTape.readSingle();*/
+
+		if(!runLengthTape.openToWrite())
+		{
+			std::cout << "Error opening runLengthTape\n";
+			return;
+		}
+		//runLengthTape.writeSingle(5);
+		/*runLengthTape.close();
+		runLengthTape.openToRead();
+		int temp = runLengthTape.readSingle();*/
 		T record = db.readSingle();
 		T newRecord;
 		int length = 1;
-		while(record.isValid())
+		int recordInDB=0;
+		while(record.isValid() && !db.isEndOfTape())
 		{
 			newRecord = db.readSingle();
-			if(newRecord.isSmaller())
+
+			if(newRecord.isSmaller(record))
 			{
 				isSorted = false;
 				runLengthTape.writeSingle(length);
@@ -44,17 +64,31 @@ private:
 			}
 			record = newRecord;
 		}
-		runLengthTape.writeSingle(0);
+		runLengthTape.writeSingle(--length);
+		runLengthTape.writeSingle(-1);
 		runLengthTape.close();
+		db.close();
+		db.openToRead();
 
 		//rewrite to tape
 		runLengthTape.openToRead();
 		length = runLengthTape.readSingle();
-		while(length>0)
+		while(length>=0)
 		{
-
+			//length = runLengthTape.readSingle();
+			while(length>0)
+			{
+				int readerBufSize = length<bufferSize?length:bufferSize;
+				T* buffer = db.readMultiple(readerBufSize);
+				tape3.writeMultiple(buffer, readerBufSize);
+				length-=10;
+			}
 			length = runLengthTape.readSingle();
 		}
+		runLengthTape.close();
+		db.close();
+		tape3.close();
+		std::cout << "Rewrite done" << std::endl;
 	}
 
 	void sortStep()
@@ -66,7 +100,7 @@ public:
 	Database(std::string databaseFile, int bufferSize = 10)
 	{
 		static_assert(std::is_base_of<Entity, T>::value, "T must be derived from Entity");
-		createDatabase();
+		createDatabase(databaseFile,bufferSize);
 	}
 
 	void createDatabase(std::string databaseFile, int bufferSize = 10)

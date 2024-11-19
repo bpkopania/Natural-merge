@@ -10,6 +10,6 @@ public:
 	virtual bool equal(Entity& other) = 0;
 	virtual bool isSmaller(Entity& other) = 0;
 
-	virtual bool isValid();
+	virtual bool isValid() = 0;
 };
 
