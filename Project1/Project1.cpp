@@ -39,7 +39,7 @@ int main()
 
  //   tape.close();
 
-    StudentFactory factory("db.dat", 10);
+    StudentFactory factory("db.dat", 20);
     factory.build();
     Tape<Student> db("db.dat");
     db.openToRead();
@@ -50,24 +50,40 @@ int main()
 	}
     db.close();
 
-    db.openToWrite();
+    /*db.openToWrite();
     for (int i = 1; i <= 5; i++)
     {
         char name[30] = "Bartek";
         Student s(name, i, i, i);
         db.writeSingle(s);
     }
-    for (int i = 6; i > 1; i--)
+    for (int i = 1; i <= 5; i++)
     {
-        char name[30] = "Bartek";
+        char name[30] = "drugaSeria";
         Student s(name, i, i, i);
         db.writeSingle(s);
     }
-    db.close();
+    for (int i = 2; i <= 5; i++)
+    {
+        char name[30] = "trzeciaSeria";
+        Student s(name, i, i, i);
+        db.writeSingle(s);
+    }
+    db.close();*/
 
-    Database<Student> database("db.dat", 10);
+    Database<Student> database("db.dat", 5);
+    database.setDumpAfterStep(true);
     database.sort();
-    db.openToRead();
+
+    /*db.openToRead();
+    multipleRead = db.readMultiple(10);
+    for (int i = 0; i < 10; i++)
+    {
+        multipleRead[i].print();
+    }
+    db.close();*/
+    database.dumpTape();
+    
 
 	return 0;
 }

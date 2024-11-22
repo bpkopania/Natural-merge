@@ -66,6 +66,8 @@ public:
 
 	void close()
 	{
+		file.clear();
+		file.seekg(0, std::ios::beg);
 		if (file)
 			file.close();
 	}
