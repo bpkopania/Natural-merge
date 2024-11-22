@@ -6,7 +6,7 @@ class Student :
     public Entity
 {
 public:
-	char name[30];
+	char name[32];
 	short kol1, kol2, kol3;
 
 	

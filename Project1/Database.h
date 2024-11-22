@@ -27,23 +27,12 @@ private:
 		db.openToRead();
 		tape3.openToWrite();
 
-
-		//Tape<int> ffffff("runLengthTape.dat");
-		/*runLengthTape.openToWrite();
-		runLengthTape.writeSingle(5);
-		runLengthTape.close();
-		runLengthTape.openToRead();
-		int aaaa = runLengthTape.readSingle();*/
-
 		if(!runLengthTape.openToWrite())
 		{
 			std::cout << "Error opening runLengthTape\n";
 			return;
 		}
-		//runLengthTape.writeSingle(5);
-		/*runLengthTape.close();
-		runLengthTape.openToRead();
-		int temp = runLengthTape.readSingle();*/
+
 		T record = db.readSingle();
 		T newRecord;
 		int length = 1;
@@ -104,8 +93,10 @@ private:
 		bool isTape1End = false;
 		bool isTape2End = false;
 		int length = tape3.readLength();
+		int recordsReaded = 0;
 		while(length>=0 && !tape3.isEndOfTape())
 		{
+			recordsReaded += length;
 			numberOfruns++;
 			if (tape == 0)
 			{
@@ -158,17 +149,22 @@ private:
 		{
 			length1 = tape1.readLength();
 			length2 = tape2.readLength();
+			if(tape1.isEndOfTape() || tape2.isEndOfTape())
+			{
+				break;
+			}
+
 			r1++;
 			r2++;
 			if(length1 == -1)
 			{
 				isTape1End = true;
-				break;
+				//break;
 			}
 			if(length2 == -1)
 			{
 				isTape2End = true;
-				break;
+				//break;
 			}
 			int newLength = (length1 > 0 ? length1 : 0) + (length2 > 0 ? length2 : 0);
 			tape3.writeLength(
@@ -176,12 +172,16 @@ private:
 			);
 				int readerBufSize1 = length1<bufferSize?length1:bufferSize;
 				int readerBufSize2 = length2<bufferSize?length2:bufferSize;
-				T* buffer1 = tape1.readMultiple(readerBufSize1);
-				T* buffer2 = tape2.readMultiple(readerBufSize2);
+				T* buffer1 = NULL;
+					T* buffer2 = NULL;
+			if(!isTape1End)
+				buffer1 = tape1.readMultiple(readerBufSize1);
+				if(!isTape2End)
+					buffer2 = tape2.readMultiple(readerBufSize2);
 				int i1 = 0;
 				int i2 = 0;
 				
-				while(i1<length1 && i2< length2)
+				while(i1<length1 && i2< length2 && !isTape1End && !isTape2End)
 				{
 					if(buffer1[i1%bufferSize].isSmaller(buffer2[i2%bufferSize]))
 					{
@@ -235,6 +235,7 @@ private:
 		}
 
 		//rewrite the remaining part
+		length1 = tape1.readLength();
 		tape3.writeLength(length1);
 		while (length1 > 0)
 		{
@@ -244,14 +245,14 @@ private:
 			delete buffer;
 			length1 -= bufferSize;
 		}
-		while (length2 > 0)
+		/*while (length2 > 0)
 		{
 			int readerBufSize = length2 < bufferSize ? length2 : bufferSize;
 			T* buffer = tape2.readMultiple(readerBufSize);
 			tape3.writeMultiple(buffer, readerBufSize);
 			delete buffer;
 			length2 -= bufferSize;
-		}
+		}*/
 
 
 		tape3.writeLength(-1);

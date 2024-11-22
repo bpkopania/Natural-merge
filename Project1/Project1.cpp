@@ -39,7 +39,7 @@ int main()
 
  //   tape.close();
 
-    StudentFactory factory("db.dat", 20);
+    StudentFactory factory("db.dat", 10);
     factory.build();
     Tape<Student> db("db.dat");
     db.openToRead();
