@@ -9,7 +9,7 @@ bool Student::isGreater(Entity& other)
 {
 	Student* otherStudent = dynamic_cast<Student*>(&other);
 	if (otherStudent) {
-		return this->avg() > otherStudent->avg();
+		return this->avg() >= otherStudent->avg();
 	}
 	return false;
 }
@@ -42,6 +42,15 @@ Student::Student(char* name, short kol1, short kol2, short kol3)
 	: kol1(kol1), kol2(kol2), kol3(kol3)
 {
 	strncpy_s(this->name, name, 30);
+}
+
+Student::Student()
+{
+	char tempName[30] = "\0";
+	strncpy_s(this->name, tempName, 30);
+	kol1 = 0;
+	kol2 = 0;
+	kol3 = 0;
 }
 
 bool Student::isValid()

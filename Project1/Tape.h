@@ -58,6 +58,11 @@ public:
 		return file.eof() && file.fail();
 	}
 
+	int readedRecords()
+	{
+		return file.gcount() / sizeof(T);
+	}
+
 	Tape() {	}
 
 	Tape(std::string filename):

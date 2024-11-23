@@ -39,13 +39,14 @@ int main()
 
  //   tape.close();
 
-    StudentFactory factory("db.dat", 10);
+    StudentFactory factory("db.dat", 20);
     factory.build();
     Tape<Student> db("db.dat");
     db.openToRead();
     Student* multipleRead = db.readMultiple(10);
     for(int i = 0; i < 10; i++)
 	{
+        std::cout << i << ": ";
         multipleRead[i].print();
 	}
     db.close();
@@ -72,7 +73,7 @@ int main()
     db.close();*/
 
     Database<Student> database("db.dat", 5);
-    database.setDumpAfterStep(true);
+    database.setDumpAfterStep(false);
     database.sort();
 
     /*db.openToRead();

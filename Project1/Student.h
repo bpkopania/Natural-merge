@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning(disable : 4996)
 #include "Entity.h"
 #include <cstring>
 
@@ -19,7 +20,21 @@ public:
     bool isSmaller(Entity& other) override;
 
 	Student(char* name, short kol1, short kol2, short kol3);
-    Student() = default;
+    Student();
+
+    Student& operator=(const Student& other) {
+        if (this == &other) {
+            return *this;
+        }
+
+        std::strncpy(this->name, other.name, sizeof(this->name) - 1);
+        this->name[sizeof(this->name) - 1] = '\0';
+        this->kol1 = other.kol1;
+        this->kol2 = other.kol2;
+        this->kol3 = other.kol3;
+
+        return *this;
+    }
 
     bool operator<(const Student& other) const {
         return this->avg() < other.avg();
