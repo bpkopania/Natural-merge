@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include <string>
+#include <vector>
 
 template <class T> class Tape
 {
@@ -47,10 +48,10 @@ public:
 		file.write(reinterpret_cast<const char*>(&input), sizeof(T));
 	}
 
-	void writeMultiple(T* input, int number)
+	void writeMultiple(std::vector<T>& input, int number)
 	{
 		numberOfAcces++;
-		file.write(reinterpret_cast<char*>(input), sizeof(T) * number);
+		file.write(reinterpret_cast<char*>(input.data()), sizeof(T) * number);
 	}
 
 	void writeLength(int length)

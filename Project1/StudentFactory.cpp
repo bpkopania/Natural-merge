@@ -1,4 +1,5 @@
 #include "StudentFactory.h"
+#include <vector>
 
 void StudentFactory::build()
 {
@@ -8,7 +9,8 @@ void StudentFactory::build()
 		return;
 	}
     int numberOfPackeges = number / packageSize;
-    Student package[packageSize];
+    std::vector<Student> package(packageSize);
+	//Student package[packageSize];
     Student singleStudent;
     std::string name;
     std::string surname;

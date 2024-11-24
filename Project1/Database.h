@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 #include "Tape.h"
 #include "Entity.h"
@@ -24,60 +25,19 @@ private:
 
 	void rewriteDBforSort()
 	{
-		isSorted = true;
+		isSorted = false;
 		db.openToRead();
 		tape3.openToWrite();
 
-		if(!runLengthTape.openToWrite())
+		T record;
+		while(!db.isEndOfTape())
 		{
-			std::cout << "Error opening runLengthTape\n";
-			return;
+			record = db.readSingle();
+			if (db.isEndOfTape())
+				break;
+			tape3.writeSingle(record);
 		}
 
-		T record = db.readSingle();
-		T newRecord;
-		int length = 1;
-		int recordInDB=0;
-		while(record.isValid() && !db.isEndOfTape())
-		{
-			newRecord = db.readSingle();
-
-			if(newRecord.isSmaller(record))
-			{
-				isSorted = false;
-				runLengthTape.writeSingle(length);
-				length = 1;
-			}
-			else
-			{
-				length++;
-			}
-			record = newRecord;
-		}
-		runLengthTape.writeSingle(--length);
-		runLengthTape.writeSingle(-1);
-		runLengthTape.close();
-		db.close();
-		db.openToRead();
-
-		//rewrite to tape
-		runLengthTape.openToRead();
-		length = runLengthTape.readSingle();
-		while(length>=0)
-		{
-			//tape3.writeLength(length);
-			//length = runLengthTape.readSingle();
-			while(length>0)
-			{
-				int readerBufSize = length<bufferSize?length:bufferSize;
-				T* buffer = db.readMultiple(readerBufSize);
-				tape3.writeMultiple(buffer, readerBufSize);
-				length-= bufferSize;
-			}
-			length = runLengthTape.readSingle();
-		}
-		//tape3.writeLength(-1);
-		runLengthTape.close();
 		db.close();
 		tape3.close();
 		std::cout << "Rewrite done" << std::endl;
@@ -92,12 +52,12 @@ private:
 		T* readerBuffer2 = NULL;
 		T* readerBuffer3 = NULL;*/
 
-		T* writterBuffer1 = new T[bufferSize];
+		/*T* writterBuffer1 = new T[bufferSize];
 		T* writterBuffer2 = new T[bufferSize];
-		T* writterBuffer3 = new T[bufferSize];
-		/*auto writterBuffer1 = std::make_unique<T[]>(bufferSize);
-		auto writterBuffer2 = std::make_unique<T[]>(bufferSize);
-		auto writterBuffer3 = std::make_unique<T[]>(bufferSize);*/
+		T* writterBuffer3 = new T[bufferSize];*/
+		std::vector<T> writterBuffer1(bufferSize);
+		std::vector<T> writterBuffer2(bufferSize);
+		std::vector<T> writterBuffer3(bufferSize);
 
 
 		//int readerBuf1Cursor, readerBuf2Cursor, readerBuf3Cursor;
@@ -238,6 +198,11 @@ private:
 				}
 			}
 
+			if (writerBuf3Cursor == bufferSize)
+			{
+				tape3.writeMultiple(writterBuffer3, bufferSize);
+				writerBuf3Cursor = 0;
+			}
 			//write remaining parts of run tapes
 			while(newRecordTape1.isGreater(previousRecordTape1))
 			{
@@ -295,12 +260,12 @@ private:
 		if(readerBuffer3)
 			delete[] readerBuffer3;*/
 
-		if(writterBuffer1)
+		/*if(writterBuffer1)
 			delete[] writterBuffer1;
 		if(writterBuffer2)
 			delete[] writterBuffer2;
 		if(writterBuffer3)
-			delete[] writterBuffer3;
+			delete[] writterBuffer3;*/
 
 		tape1.close();
 		tape2.close();

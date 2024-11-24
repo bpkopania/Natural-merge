@@ -15,7 +15,7 @@ int main()
 
 
 
-    StudentFactory factory("db.dat", 500);
+    StudentFactory factory("db.dat", 10);
     factory.build();
 
     database.sort();
