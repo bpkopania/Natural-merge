@@ -88,15 +88,19 @@ private:
 		/**
 		 * File Buffers and cursors
 		 ***/
-		T* readerBuffer1 = NULL;
+		/*T* readerBuffer1 = NULL;
 		T* readerBuffer2 = NULL;
-		T* readerBuffer3 = NULL;
+		T* readerBuffer3 = NULL;*/
 
 		T* writterBuffer1 = new T[bufferSize];
 		T* writterBuffer2 = new T[bufferSize];
 		T* writterBuffer3 = new T[bufferSize];
+		/*auto writterBuffer1 = std::make_unique<T[]>(bufferSize);
+		auto writterBuffer2 = std::make_unique<T[]>(bufferSize);
+		auto writterBuffer3 = std::make_unique<T[]>(bufferSize);*/
 
-		int readerBuf1Cursor, readerBuf2Cursor, readerBuf3Cursor;
+
+		//int readerBuf1Cursor, readerBuf2Cursor, readerBuf3Cursor;
 		int writerBuf1Cursor, writerBuf2Cursor, writerBuf3Cursor;
 
 
@@ -114,7 +118,7 @@ private:
 		/**
 		 *split into two tapes
 		 **/
-		readerBuf3Cursor = 0;
+		//readerBuf3Cursor = 0;
 
 		writerBuf1Cursor = 1;
 		writerBuf2Cursor = 0;
@@ -284,25 +288,25 @@ private:
 		 * free file Buffers and cursors
 		 ***/
 
-		if(readerBuffer1 != NULL)
+		/*if(readerBuffer1 != NULL)
 			delete [] readerBuffer1;
 		if(readerBuffer2 != NULL)
 			delete[] readerBuffer2;
 		if(readerBuffer3)
-			delete[] readerBuffer3;
+			delete[] readerBuffer3;*/
 
-		delete[] writterBuffer1;
-		delete[] writterBuffer2;
-		delete[] writterBuffer3;
-
-
-
+		if(writterBuffer1)
+			delete[] writterBuffer1;
+		if(writterBuffer2)
+			delete[] writterBuffer2;
+		if(writterBuffer3)
+			delete[] writterBuffer3;
 
 		tape1.close();
 		tape2.close();
 		tape3.close();
 
-		std::cout << "Step done" << std::endl;
+		//std::cout << "Step done" << std::endl;
 	}
 
 public:
@@ -330,9 +334,16 @@ public:
 
 	void sort()
 	{
+		int numerOfStages = 0;
 		rewriteDBforSort();
+		if(dumpBeforeSort)
+		{
+			dumpTape();
+			getchar();
+		}
 		while(!isSorted)
 		{
+			numerOfStages++;
 			sortStep();
 			if(dumpAfterStep)
 			{
@@ -340,6 +351,13 @@ public:
 				getchar();
 			}
 		}
+		if(dumpAfterSort)
+		{
+			dumpTape();
+			getchar();
+		}
+		std::cout << "Number of stages: " << numerOfStages << std::endl;
+		std::cout << "Number of access to files " << tape1.getNumberOfAcces() + tape2.getNumberOfAcces() + tape3.getNumberOfAcces() << std::endl;
 	}
 
 	~Database()
@@ -357,8 +375,7 @@ public:
 			T readed = tape3.readSingle();
 			if (tape3.isEndOfTape())
 				break;
-			printf("%9d", recordNum);
-			//std::cout << recordNum++ << ": ";
+			printf("%9d ", recordNum++);
 			readed.print();
 		}
 		tape3.close();

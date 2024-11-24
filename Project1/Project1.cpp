@@ -9,81 +9,69 @@ int main()
 {
     setlocale(LC_ALL, "");
 
- //   char name[30] = "Bartek";
- //   Student s(name, 4, 3, 3);
- //   Entity* entity = &s;
- //   entity->print();
- //   Tape<Student> tape("tape1.dat");
- //   if (!tape.openToWrite())
- //       return 1;
- //   tape.writeSingle(s);
- //   char name2[30] = "Alicja";
-	//Student s2(name2, 4, 5, 5);
- //   tape.writeSingle(s2);
- //   tape.close();
- //   tape.openToRead();
- //   Student readedStudent = tape.readSingle();
- //   readedStudent.print();
- //   Student readedStudent2 = tape.readSingle();
- //   readedStudent2.print();
- //   tape.close();
- //   tape.openToRead();
- //   Student* test = tape.readMultiple(3);
- //   
- //   tape.close();
- //   test[0].print();
- //   test[1].print();
- //   Student testowy = test[2];
- //       //test[2].print();
- //   std::cout << testowy.isValid();
-
- //   tape.close();
-
-    StudentFactory factory("db.dat", 20);
-    factory.build();
-    Tape<Student> db("db.dat");
-    db.openToRead();
-    Student* multipleRead = db.readMultiple(10);
-    for(int i = 0; i < 10; i++)
-	{
-        std::cout << i << ": ";
-        multipleRead[i].print();
-	}
-    db.close();
-
-    /*db.openToWrite();
-    for (int i = 1; i <= 5; i++)
-    {
-        char name[30] = "Bartek";
-        Student s(name, i, i, i);
-        db.writeSingle(s);
-    }
-    for (int i = 1; i <= 5; i++)
-    {
-        char name[30] = "drugaSeria";
-        Student s(name, i, i, i);
-        db.writeSingle(s);
-    }
-    for (int i = 2; i <= 5; i++)
-    {
-        char name[30] = "trzeciaSeria";
-        Student s(name, i, i, i);
-        db.writeSingle(s);
-    }
-    db.close();*/
 
     Database<Student> database("db.dat", 5);
-    database.setDumpAfterStep(false);
+
+
+
+
+    StudentFactory factory("db.dat", 500);
+    factory.build();
+
     database.sort();
 
-    /*db.openToRead();
-    multipleRead = db.readMultiple(10);
-    for (int i = 0; i < 10; i++)
+    return 0;
+
+    
+    int choice;
+    bool dumping;
+    std::cout << "1. Generate new database\n2. Use existing database\n3. Enter data manually\n";
+    std::cin >> choice;
+    std::cout << "Do you want to dump data after every stage?\n";
+    std::cin >> dumping;
+    database.setDumpAfterStep(dumping);
+    switch (choice)
     {
-        multipleRead[i].print();
+    case 1:
+    {
+        std::cout << "Enter number of records to generate: ";
+        int numberOfRecords;
+        std::cin >> numberOfRecords;
+        StudentFactory factory("db.dat", numberOfRecords);
+        factory.build();
+        break;
     }
-    db.close();*/
-    database.dumpTape();
+    case 2:
+        std::cout << "Using file db.dat";
+        break;
+    case 3:
+    {
+        Tape<Student> db("db.dat");
+        db.openToWrite();
+        while (true)
+        {
+            Student student;
+            int kol1, kol2, kol3;
+            char name[30];
+            std::string nameString;
+            std::cout << "Enter student's name (0 to exit): ";
+            std::getline(std::cin, nameString);
+            if (nameString == "0")
+                break;
+            std::cout << "Enter student's grades (3): ";
+            std::cin >> kol1 >> kol2 >> kol3;
+            strncpy(name, nameString.c_str(), nameString.length() + 1);
+            student = Student(name, kol1, kol2, kol3);
+            db.writeSingle(student);
+
+            db.close();
+            break;
+        }
+    }
+    }
+
+    database.sort();
+
     
 
 	return 0;
