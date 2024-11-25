@@ -13,9 +13,9 @@ int main()
     Database<Student> database("db.dat", 5);
 
 
+    database.setDumpAfterStep(false);
 
-
-    StudentFactory factory("db.dat", 10);
+    StudentFactory factory("db.dat", 100000000);
     factory.build();
 
     database.sort();

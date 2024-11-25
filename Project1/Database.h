@@ -29,6 +29,7 @@ private:
 		db.openToRead();
 		tape3.openToWrite();
 
+		int n = 0;
 		T record;
 		while(!db.isEndOfTape())
 		{
@@ -36,6 +37,7 @@ private:
 			if (db.isEndOfTape())
 				break;
 			tape3.writeSingle(record);
+			n++;
 		}
 
 		db.close();
@@ -170,6 +172,8 @@ private:
 		T newRecordTape2 = tape2.readSingle();
 		T nullRecord;
 
+		recordsReaded = 0;
+
 		writerBuf3Cursor = 0;
 		while(!tape1.isEndOfTape() && !tape2.isEndOfTape())
 		{
@@ -237,6 +241,17 @@ private:
 			previousRecordTape1 = newRecordTape1;
 			newRecordTape1 = tape1.readSingle();
 			if(writerBuf3Cursor == bufferSize)
+			{
+				tape3.writeMultiple(writterBuffer3, bufferSize);
+				writerBuf3Cursor = 0;
+			}
+		}
+		while (!tape2.isEndOfTape())
+		{
+			writterBuffer3[writerBuf3Cursor++] = newRecordTape1;
+			previousRecordTape1 = newRecordTape1;
+			newRecordTape1 = tape1.readSingle();
+			if (writerBuf3Cursor == bufferSize)
 			{
 				tape3.writeMultiple(writterBuffer3, bufferSize);
 				writerBuf3Cursor = 0;
