@@ -13,23 +13,23 @@ int main()
     Database<Student> database("db.dat", 5);
 
 
-    database.setDumpAfterStep(false);
+    /*database.setDumpAfterStep(false);
 
     StudentFactory factory("db.dat", 100000000);
     factory.build();
 
     database.sort();
 
-    return 0;
+    return 0;*/
 
     
     int choice;
     bool dumping;
     std::cout << "1. Generate new database\n2. Use existing database\n3. Enter data manually\n";
     std::cin >> choice;
-    std::cout << "Do you want to dump data after every stage?\n";
-    std::cin >> dumping;
-    database.setDumpAfterStep(dumping);
+    /*std::cout << "Do you want to dump data after every stage?\n";
+    std::cin >> dumping;*/
+    database.setDumpAfterStep(true);
     switch (choice)
     {
     case 1:
