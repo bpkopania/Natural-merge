@@ -1,12 +1,14 @@
 #pragma once
 #include <fstream>
 #include <string>
+#include <vector>
 
 template <class T> class Tape
 {
 private:
 	std::fstream file;
 	std::string filename;
+	int numberOfAcces;
 
 public:
 	Tape& operator=(const Tape& other)
@@ -19,6 +21,7 @@ public:
 
 	T readSingle()
 	{
+		numberOfAcces++;
 		T output;
 		file.read(reinterpret_cast<char*>(&output), sizeof(T));
 		return output;
@@ -26,6 +29,7 @@ public:
 
 	T* readMultiple(int number)
 	{
+		numberOfAcces++;
 		T* output = new T[number];
 		file.read(reinterpret_cast<char*>(output), sizeof(T) * number);
 		return output;
@@ -40,12 +44,14 @@ public:
 
 	void writeSingle(T input)
 	{
+		numberOfAcces++;
 		file.write(reinterpret_cast<const char*>(&input), sizeof(T));
 	}
 
-	void writeMultiple(T* input, int number)
+	void writeMultiple(std::vector<T>& input, int number)
 	{
-		file.write(reinterpret_cast<char*>(input), sizeof(T) * number);
+		numberOfAcces++;
+		file.write(reinterpret_cast<char*>(input.data()), sizeof(T) * number);
 	}
 
 	void writeLength(int length)
@@ -58,11 +64,26 @@ public:
 		return file.eof() && file.fail();
 	}
 
-	Tape() {	}
+	int readedRecords()
+	{
+		return file.gcount() / sizeof(T);
+	}
+
+	int getNumberOfAcces()
+	{
+		return numberOfAcces;
+	}
+
+	Tape()
+	{
+		numberOfAcces = 0;
+	}
 
 	Tape(std::string filename):
 		filename(filename)
-	{	}
+	{
+		numberOfAcces = 0;
+	}
 
 	void close()
 	{

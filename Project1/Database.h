@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 #include "Tape.h"
 #include "Entity.h"
@@ -20,63 +21,25 @@ private:
 	Tape<T> tape3;
 	Tape<T> db;
 	Tape<int> runLengthTape;
+	Tape<int> runLengthTape2;
 
 	void rewriteDBforSort()
 	{
-		isSorted = true;
+		isSorted = false;
 		db.openToRead();
 		tape3.openToWrite();
 
-		if(!runLengthTape.openToWrite())
+		int n = 0;
+		T record;
+		while(!db.isEndOfTape())
 		{
-			std::cout << "Error opening runLengthTape\n";
-			return;
+			record = db.readSingle();
+			if (db.isEndOfTape())
+				break;
+			tape3.writeSingle(record);
+			n++;
 		}
 
-		T record = db.readSingle();
-		T newRecord;
-		int length = 1;
-		int recordInDB=0;
-		while(record.isValid() && !db.isEndOfTape())
-		{
-			newRecord = db.readSingle();
-
-			if(newRecord.isSmaller(record))
-			{
-				isSorted = false;
-				runLengthTape.writeSingle(length);
-				length = 1;
-			}
-			else
-			{
-				length++;
-			}
-			record = newRecord;
-		}
-		runLengthTape.writeSingle(--length);
-		runLengthTape.writeSingle(-1);
-		runLengthTape.close();
-		db.close();
-		db.openToRead();
-
-		//rewrite to tape
-		runLengthTape.openToRead();
-		length = runLengthTape.readSingle();
-		while(length>=0)
-		{
-			tape3.writeLength(length);
-			//length = runLengthTape.readSingle();
-			while(length>0)
-			{
-				int readerBufSize = length<bufferSize?length:bufferSize;
-				T* buffer = db.readMultiple(readerBufSize);
-				tape3.writeMultiple(buffer, readerBufSize);
-				length-= bufferSize;
-			}
-			length = runLengthTape.readSingle();
-		}
-		tape3.writeLength(-1);
-		runLengthTape.close();
 		db.close();
 		tape3.close();
 		std::cout << "Rewrite done" << std::endl;
@@ -84,6 +47,25 @@ private:
 
 	void sortStep()
 	{
+		/**
+		 * File Buffers and cursors
+		 ***/
+		/*T* readerBuffer1 = NULL;
+		T* readerBuffer2 = NULL;
+		T* readerBuffer3 = NULL;*/
+
+		/*T* writterBuffer1 = new T[bufferSize];
+		T* writterBuffer2 = new T[bufferSize];
+		T* writterBuffer3 = new T[bufferSize];*/
+		std::vector<T> writterBuffer1(bufferSize);
+		std::vector<T> writterBuffer2(bufferSize);
+		std::vector<T> writterBuffer3(bufferSize);
+
+
+		//int readerBuf1Cursor, readerBuf2Cursor, readerBuf3Cursor;
+		int writerBuf1Cursor, writerBuf2Cursor, writerBuf3Cursor;
+
+
 		int tape = 0; // 0 -tape1; 1 tape2
 		int numberOfruns=0;
 		tape1.openToWrite();
@@ -92,45 +74,88 @@ private:
 		//rewrite to tapes 1 and 2
 		bool isTape1End = false;
 		bool isTape2End = false;
-		int length = tape3.readLength();
-		int recordsReaded = 0;
-		while(length>=0 && !tape3.isEndOfTape())
+		int recordsReaded = 1;
+
+		
+		/**
+		 *split into two tapes
+		 **/
+		//readerBuf3Cursor = 0;
+
+		writerBuf1Cursor = 1;
+		writerBuf2Cursor = 0;
+		int maxReaded;
+		double previousAVG = 0;
+		T currentRecord, previousRecord;
+		previousRecord = tape3.readSingle();
+		writterBuffer1[0] = previousRecord;
+
+
+		while(!tape3.isEndOfTape())
 		{
-			recordsReaded += length;
-			numberOfruns++;
-			if (tape == 0)
+			currentRecord = tape3.readSingle();
+			if (tape3.isEndOfTape())
+				break;
+			recordsReaded++;
+			if(!currentRecord.isSmaller(previousRecord))
 			{
-				tape1.writeLength(length);
-			}
-			else
-			{
-				tape2.writeLength(length);
-			}
-			while(length>0)
-			{
-				int readerBufSize = length<bufferSize?length:bufferSize;
-				T* buffer = tape3.readMultiple(readerBufSize);
-				if(tape == 0)
+				if (tape == 0)
 				{
-					tape1.writeMultiple(buffer, readerBufSize);
+					writterBuffer1[writerBuf1Cursor++] = currentRecord;
 				}
 				else
 				{
-					tape2.writeMultiple(buffer, readerBufSize);
+					writterBuffer2[writerBuf2Cursor++] = currentRecord;
 				}
-				length-= bufferSize;
 			}
-			length = tape3.readLength();
-			tape = (tape+1)%2;
+			else
+			{
+				numberOfruns++;
+				tape = (tape + 1) % 2;
+				if (tape == 0)
+				{
+					writterBuffer1[writerBuf1Cursor++] = currentRecord;
+				}
+				else
+				{
+					writterBuffer2[writerBuf2Cursor++] = currentRecord;
+				}
+			}
+			if(writerBuf1Cursor == bufferSize)
+			{
+				tape1.writeMultiple(writterBuffer1, bufferSize);
+				writerBuf1Cursor = 0;
+			}
+			if(writerBuf2Cursor == bufferSize)
+			{
+				tape2.writeMultiple(writterBuffer2, bufferSize);
+				writerBuf2Cursor = 0;
+			}
+			previousRecord = currentRecord;
 		}
 
-		tape1.writeLength(-1);
-		tape2.writeLength(-1);
+		//write the rest
+		if (writerBuf1Cursor > 0)
+		{
+			tape1.writeMultiple(writterBuffer1, writerBuf1Cursor);
+			writerBuf1Cursor = 0;
+		}
+		if(writerBuf2Cursor > 0)
+		{
+			tape2.writeMultiple(writterBuffer2, writerBuf2Cursor);
+			writerBuf2Cursor = 0;
+		}
+
 
 		tape1.close();
 		tape2.close();
 		tape3.close();
-		if (numberOfruns <= 2)
+
+		/**
+		 * Number of new runs is two times smaller than number of runs in previous step
+		 * when we merge two runs togehter we have only one that is sorted
+		 **/
+		if (numberOfruns < 2)
 			isSorted = true;
 
 
@@ -138,130 +163,130 @@ private:
 		tape2.openToRead();
 		tape3.openToWrite();
 
-		int length1, length2;
+		/**
+		 * Merge tapes 1 and 2
+		 **/
+		T previousRecordTape1;
+		T previousRecordTape2;
+		T newRecordTape1 = tape1.readSingle();
+		T newRecordTape2 = tape2.readSingle();
+		T nullRecord;
 
-		int i = 0;
-		int r1 = 0;
-		int r2 = 0;
+		recordsReaded = 0;
 
-
-		while(!isTape1End && !isTape2End)
+		writerBuf3Cursor = 0;
+		while(!tape1.isEndOfTape() && !tape2.isEndOfTape())
 		{
-			length1 = tape1.readLength();
-			length2 = tape2.readLength();
-			if(tape1.isEndOfTape() || tape2.isEndOfTape())
+			while(newRecordTape1.isGreater(previousRecordTape1) && newRecordTape2.isGreater(previousRecordTape2))
 			{
-				break;
+				if(newRecordTape1.isSmaller(newRecordTape2))
+				{
+					writterBuffer3[writerBuf3Cursor++] = newRecordTape1;
+					previousRecordTape1 = newRecordTape1;
+					newRecordTape1 = tape1.readSingle();
+					if(tape1.isEndOfTape())
+						break;
+				}
+				else
+				{
+					writterBuffer3[writerBuf3Cursor++] = newRecordTape2;
+					previousRecordTape2 = newRecordTape2;
+					newRecordTape2 = tape2.readSingle();
+					if(tape2.isEndOfTape())
+						break;
+				}
+				if(writerBuf3Cursor == bufferSize)
+				{
+					tape3.writeMultiple(writterBuffer3, bufferSize);
+					writerBuf3Cursor = 0;
+				}
 			}
 
-			r1++;
-			r2++;
-			if(length1 == -1)
+			if (writerBuf3Cursor == bufferSize)
 			{
-				isTape1End = true;
-				//break;
+				tape3.writeMultiple(writterBuffer3, bufferSize);
+				writerBuf3Cursor = 0;
 			}
-			if(length2 == -1)
+			//write remaining parts of run tapes
+			while(newRecordTape1.isGreater(previousRecordTape1))
 			{
-				isTape2End = true;
-				//break;
+				writterBuffer3[writerBuf3Cursor++] = newRecordTape1;
+				previousRecordTape1 = newRecordTape1;
+				newRecordTape1 = tape1.readSingle();
+				if(writerBuf3Cursor == bufferSize)
+				{
+					tape3.writeMultiple(writterBuffer3, bufferSize);
+					writerBuf3Cursor = 0;
+				}
 			}
-			int newLength = (length1 > 0 ? length1 : 0) + (length2 > 0 ? length2 : 0);
-			tape3.writeLength(
-				newLength
-			);
-				int readerBufSize1 = length1<bufferSize?length1:bufferSize;
-				int readerBufSize2 = length2<bufferSize?length2:bufferSize;
-				T* buffer1 = NULL;
-					T* buffer2 = NULL;
-			if(!isTape1End)
-				buffer1 = tape1.readMultiple(readerBufSize1);
-				if(!isTape2End)
-					buffer2 = tape2.readMultiple(readerBufSize2);
-				int i1 = 0;
-				int i2 = 0;
-				
-				while(i1<length1 && i2< length2 && !isTape1End && !isTape2End)
+			while(newRecordTape2.isGreater(previousRecordTape2))
+			{
+				writterBuffer3[writerBuf3Cursor++] = newRecordTape2;
+				previousRecordTape2 = newRecordTape2;
+				newRecordTape2 = tape2.readSingle();
+				if(writerBuf3Cursor == bufferSize)
 				{
-					if(buffer1[i1%bufferSize].isSmaller(buffer2[i2%bufferSize]))
-					{
-						tape3.writeSingle(buffer1[i1% bufferSize]);
-						i1++;
-						if(i1% bufferSize == 0 && i1 != length1)
-						{
-							buffer1 = tape1.readMultiple(readerBufSize1);
-						}
-					}
-					else
-					{
-						tape3.writeSingle(buffer2[i2% bufferSize]);
-						i2++;
-						if(i2% bufferSize == 0 && i2 != length2)
-						{
-							buffer2 = tape2.readMultiple(readerBufSize2);
-						}
-					}
-					i++;
-
+					tape3.writeMultiple(writterBuffer3, bufferSize);
+					writerBuf3Cursor = 0;
 				}
-				while(i1<length1)
-				{
-					tape3.writeSingle(buffer1[i1% bufferSize]);
-					i1++;
-					i++;
-					if(i1% bufferSize == 0 && i1 != length1)
-					{
-						delete [] buffer1;
-						buffer1 = NULL;
-						buffer1 = tape1.readMultiple(readerBufSize1);
-					}
-				}
-				while(i2<length2)
-				{
-					tape3.writeSingle(buffer2[i2% bufferSize]);
-					i2++;
-					i++;
-					if(i2% bufferSize == 0 && i2 != length2)
-					{
-						delete [] buffer2;
-						buffer2 = NULL;
-						buffer2 = tape2.readMultiple(readerBufSize2);
-					}
-				}
-			if(buffer1)
-				delete [] buffer1;
-			if(buffer2)
-				delete [] buffer2;
+			}
+			previousRecordTape2 = nullRecord;
+			previousRecordTape1 = nullRecord;
 		}
 
-		//rewrite the remaining part
-		length1 = tape1.readLength();
-		tape3.writeLength(length1);
-		while (length1 > 0)
+		//write remaining the potenial last run of tape1
+		while(!tape1.isEndOfTape())
 		{
-			int readerBufSize = length1 < bufferSize ? length1 : bufferSize;
-			T* buffer = tape1.readMultiple(readerBufSize);
-			tape3.writeMultiple(buffer, readerBufSize);
-			delete buffer;
-			length1 -= bufferSize;
+			writterBuffer3[writerBuf3Cursor++] = newRecordTape1;
+			previousRecordTape1 = newRecordTape1;
+			newRecordTape1 = tape1.readSingle();
+			if(writerBuf3Cursor == bufferSize)
+			{
+				tape3.writeMultiple(writterBuffer3, bufferSize);
+				writerBuf3Cursor = 0;
+			}
 		}
-		/*while (length2 > 0)
+		while (!tape2.isEndOfTape())
 		{
-			int readerBufSize = length2 < bufferSize ? length2 : bufferSize;
-			T* buffer = tape2.readMultiple(readerBufSize);
-			tape3.writeMultiple(buffer, readerBufSize);
-			delete buffer;
-			length2 -= bufferSize;
-		}*/
+			writterBuffer3[writerBuf3Cursor++] = newRecordTape1;
+			previousRecordTape1 = newRecordTape1;
+			newRecordTape1 = tape1.readSingle();
+			if (writerBuf3Cursor == bufferSize)
+			{
+				tape3.writeMultiple(writterBuffer3, bufferSize);
+				writerBuf3Cursor = 0;
+			}
+		}
+		if(writerBuf3Cursor > 0)
+		{
+			tape3.writeMultiple(writterBuffer3, writerBuf3Cursor);
+			writerBuf3Cursor = 0;
+		}
 
 
-		tape3.writeLength(-1);
+		/**
+		 * free file Buffers and cursors
+		 ***/
+
+		/*if(readerBuffer1 != NULL)
+			delete [] readerBuffer1;
+		if(readerBuffer2 != NULL)
+			delete[] readerBuffer2;
+		if(readerBuffer3)
+			delete[] readerBuffer3;*/
+
+		/*if(writterBuffer1)
+			delete[] writterBuffer1;
+		if(writterBuffer2)
+			delete[] writterBuffer2;
+		if(writterBuffer3)
+			delete[] writterBuffer3;*/
 
 		tape1.close();
 		tape2.close();
 		tape3.close();
 
-		std::cout << "Step done" << std::endl;
+		//std::cout << "Step done" << std::endl;
 	}
 
 public:
@@ -289,9 +314,16 @@ public:
 
 	void sort()
 	{
+		int numerOfStages = 0;
 		rewriteDBforSort();
+		if(dumpBeforeSort)
+		{
+			dumpTape();
+			getchar();
+		}
 		while(!isSorted)
 		{
+			numerOfStages++;
 			sortStep();
 			if(dumpAfterStep)
 			{
@@ -299,6 +331,13 @@ public:
 				getchar();
 			}
 		}
+		if(dumpAfterSort)
+		{
+			dumpTape();
+			getchar();
+		}
+		std::cout << "Number of stages: " << numerOfStages << std::endl;
+		std::cout << "Number of access to files " << tape1.getNumberOfAcces() + tape2.getNumberOfAcces() + tape3.getNumberOfAcces() << std::endl;
 	}
 
 	~Database()
@@ -311,21 +350,13 @@ public:
 	{
 		tape3.openToRead();
 		int recordNum=0;
-		int length = tape3.readLength();
-		while(length>=0)
+		while(!tape3.isEndOfTape())
 		{
-			while(length>0)
-			{
-				int readerBufSize = length<bufferSize?length:bufferSize;
-				T* buffer = tape3.readMultiple(readerBufSize);
-				for(int i = 0; i < readerBufSize; i++)
-				{
-					std::cout << recordNum++ << ": ";
-					buffer[i].print();
-				}
-				length-= bufferSize;
-			}
-			length = tape3.readLength();
+			T readed = tape3.readSingle();
+			if (tape3.isEndOfTape())
+				break;
+			printf("%9d ", recordNum++);
+			readed.print();
 		}
 		tape3.close();
 	}
